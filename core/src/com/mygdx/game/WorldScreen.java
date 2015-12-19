@@ -5,18 +5,16 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.ModelLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.glutils.MipMapGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.btSphereShape;
 import com.badlogic.gdx.physics.bullet.linearmath.btIDebugDraw;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -64,48 +62,55 @@ public class WorldScreen implements Screen {
 		worldRenderer = new WorldRenderer(viewport, camera, engine);
 		stage = new GameStage(viewport);
 
-		camera.near = 1e-1f;
-		camera.far = 1e3f;
-		camera.position.set(-5, 3, -5);
+		camera.near = 1f;
+		camera.far = 1e5f;
+		camera.position.set(50, 3, -5);
 		camera.up.set(Vector3.Y);
 		camera.lookAt(Vector3.Zero);
 
 		// Load assets
+		assets.load("nasa_sun.png", Texture.class, textureParameter);
+		assets.load("planet_Dank_1182.png", Texture.class, textureParameter);
 		assets.load("planet_Quom_2449.png", Texture.class, textureParameter);
+		assets.load("Planet_New_Aruba_5128.png", Texture.class, textureParameter);
+		assets.load("planet_Muunilinst_1406.png", Texture.class, textureParameter);
 		assets.load("skybox.g3db", Model.class, modelParameters);
+		assets.finishLoading();
 
 		// Planets
-		assets.finishLoadingAsset("planet_Quom_2449.png");
-		Texture texture = assets.get("planet_Quom_2449.png");
-		Material material = new Material(
-				TextureAttribute.createDiffuse(texture),
-				ColorAttribute.createSpecular(1, 1, 1, 1),
-				FloatAttribute.createShininess(8f));
-		long attributes = VertexAttributes.Usage.Position
-				| VertexAttributes.Usage.Normal
-				| VertexAttributes.Usage.TextureCoordinates;
-		ModelBuilder modelBuilder = new ModelBuilder();
-		Vector3 modelScale = new Vector3(1, 1, 1);
-		int subDivs = 24;
-		sphereModel = modelBuilder.createSphere(modelScale.x, modelScale.y, modelScale.z,
-				subDivs, subDivs, material, attributes);
+		Planet sun = new Planet("nasa_sun.png", assets.get("nasa_sun.png", Texture.class),
+				20, 1, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0.05f, 0));
+		sun.object.modelInstance.materials.first().set(new ColorAttribute(ColorAttribute.AmbientLight, Color.WHITE));
 
-		for (int i = 1; i < 4; i++) {
-			Vector3 scale = new Vector3(1, 1, 1).scl(i);
-			Vector3 pos = new Vector3((i - 1) * 10, 0, 0);
-			btSphereShape sphereShape = new btSphereShape(scale.x * 0.5f);
-			GameModelBody planet0 = new GameModelBody(sphereModel, "planet0",
-					pos, new Vector3(), scale,
-					sphereShape, 1,
-					PhysicsEngine.GROUND_FLAG, PhysicsEngine.ALL_FLAG,
-					false, false);
-			engine.addEntity(planet0);
-		}
+		Planet planet0 = new Planet("Planet_New_Aruba_5128.png", assets.get("Planet_New_Aruba_5128.png", Texture.class),
+				0.5f, 1, new Vector3(80, 0, 5), new Vector3(0, 0, 1), new Vector3(0, 0.1f, 0));
+
+		Planet planet1 = new Planet("planet_Muunilinst_1406.png", assets.get("planet_Muunilinst_1406.png", Texture.class),
+				4, 1, new Vector3(100, 0, -20), new Vector3(0, 0, 1), new Vector3(0, 0.1f, 0));
+
+		Planet planet2 = new Planet("planet_Dank_1182.png", assets.get("planet_Dank_1182.png", Texture.class),
+				2, 1, new Vector3(120, 0, 10), new Vector3(0, 0, 1), new Vector3(0, 0.1f, 0));
+
+		Planet planet3 = new Planet("planet_Quom_2449.png", assets.get("planet_Quom_2449.png", Texture.class),
+				1, 1, new Vector3(150, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 0.1f, 0));
+
+		PlanetarySystem system = new PlanetarySystem("uncharted system");
+		system.planets.add(sun);
+		system.planets.add(planet0);
+		system.planets.add(planet1);
+		system.planets.add(planet2);
+		system.planets.add(planet3);
+
+		engine.addEntity(system);
+
+		for (Planet planet : system.planets)
+			engine.addEntity(planet.object);
 
 		// Skybox
 		assets.finishLoadingAsset("skybox.g3db");
 		Model skyboxModel = assets.get("skybox.g3db");
-		Vector3 skyboxScale = new Vector3(100, 100, 100);
+		skyboxModel.materials.first().set(new ColorAttribute(ColorAttribute.AmbientLight, Color.LIGHT_GRAY));
+		Vector3 skyboxScale = new Vector3(1, 1, 1).scl(1000);
 		skybox = new GameModel(skyboxModel, "skybox",
 				new Vector3(), new Vector3(), skyboxScale);
 		engine.addEntity(skybox);

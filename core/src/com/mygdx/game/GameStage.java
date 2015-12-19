@@ -43,7 +43,7 @@ public class GameStage extends Stage {
 		addActor(rootTable = new Table());
 
 		skin = new Skin(Gdx.files.internal("skins/uiskin.json"));
-		rootTable.addActor(new Label("Hello, Space!", skin));
+		rootTable.addActor(new Label("Drag mouse to look, press WASD keys to move", skin));
 
 
 		InputMultiplexer multiplexer = new InputMultiplexer();
